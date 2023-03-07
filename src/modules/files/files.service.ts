@@ -3,9 +3,6 @@ import { InjectConnection } from '@nestjs/mongoose';
 import mongoose, { Connection } from 'mongoose';
 import { MongoGridFS } from 'mongo-gridfs';
 import { GridFSBucketReadStream, ObjectId, GridFSBucket } from 'mongodb'
-import { FileInfoVm } from './files.dtos';
-import { response } from 'express';
-import { ObjectID } from 'bson';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -20,8 +17,8 @@ export class FilesService {
         private readonly config: ConfigService
     ) {
         const bucketName = this.config.get<string>('database.bucketName');
-        this.fileModel = new MongoGridFS(this.connection.db, bucketName);
-        this.bucket = new GridFSBucket(this.connection.db, { bucketName });
+        this.fileModel = new MongoGridFS(this.connection.db as any, bucketName);
+        this.bucket = new GridFSBucket(this.connection.db as any, { bucketName });
     }
 
     getObjectId(id: string) { return new mongoose.Types.ObjectId(id) }
