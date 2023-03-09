@@ -11,14 +11,15 @@ export class FilesService {
     private fileModel: MongoGridFS;
     private logger = new Logger('FilesService')
     private bucket: GridFSBucket;
+    private bucketName: string;
     
     constructor(
         @InjectConnection() private readonly connection: Connection,
         private readonly config: ConfigService
     ) {
-        const bucketName = this.config.get<string>('database.bucketName');
-        this.fileModel = new MongoGridFS(this.connection.db as any, bucketName);
-        this.bucket = new GridFSBucket(this.connection.db as any, { bucketName });
+        this.bucketName = this.config.get<string>('database.bucketName');
+        this.fileModel = new MongoGridFS(this.connection.db as any, this.bucketName);
+        this.bucket = new GridFSBucket(this.connection.db as any, { bucketName: this.bucketName });
     }
 
     getObjectId(id: string) { return new mongoose.Types.ObjectId(id) }
@@ -44,6 +45,8 @@ export class FilesService {
         const file = await this.fileModel.findById(id)
                             .catch( err => {throw new NotFoundException(`No file found for the given id ${id}`)} )
                             .then(result => result)
-        return await this.bucket.delete(this.getObjectId(id));
+        await this.connection.collection(`${this.bucketName}.files`).deleteOne({ _id: this.getObjectId(id) });
+        await this.connection.collection(`${this.bucketName}.chunks`).deleteMany({ files_id: this.getObjectId(id) });
+        return; 
     }
 }
